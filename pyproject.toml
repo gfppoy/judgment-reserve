@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "judgment-reserve"
+version = "0.1.0"
+description = "Evidence-first practice for research compute decisions"
+requires-python = ">=3.12"
+dependencies = ["numpy==2.3.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+judgment-reserve = "judgment_reserve.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["judgment_reserve*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["container: requires a functioning Docker or Podman runtime"]

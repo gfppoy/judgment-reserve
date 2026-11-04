@@ -1,0 +1,30 @@
+{
+  "construction": "Independent digit-image reconstruction with simulated capture shifts",
+  "evidence": {
+    "case-01/README.md": "306c0b294342e2c3f3b3c88d03af08c7a6950e6230137b96c465804f310ea9c6",
+    "case-01/data/initial.npz": "25bfc386daae54891aa21cc171e31d6b20dd5fb71581a2221708e3776a051423",
+    "case-01/data/reserve.npz": "4ee7f6430a00cbd00a2288219c580e5df2f404bfa9685bd8c696cc0e1682be4e",
+    "case-01/deployment.md": "8755557f4927f090f325c7409e3d3410b6291a677c085ef65f48d5dfa58e21c3",
+    "case-01/detector.py": "9ec8af8327740088b0d2cec5a272fec543bf599d5a515bae6987d1ce06286655",
+    "case-01/loader.py": "f25e5ab9fdb4bfafb0671dc91c6f3c9f0968e43fb7a1ba34c985b95d351c4d8f",
+    "case-01/preliminary.json": "80b741f088c284cad2494b6bacc1ffd4cb6e2aee0ff83d01eba0b2bfc98ac05b",
+    "case-01/request.md": "b8a4c82da550d464addbe50a360d42a616e75bd3ef9b10e05ba7a19e6be2bddd",
+    "case-01/run.py": "76fff17b886f50c532e3fa331386400d0dd53fe4f941c684adff751b40a07be7",
+    "case-02/README.md": "306c0b294342e2c3f3b3c88d03af08c7a6950e6230137b96c465804f310ea9c6",
+    "case-02/data/initial.npz": "299130284945a270c9c1616a92bb3a583a2102b796b3b19da4e2b9d7b5948427",
+    "case-02/data/reserve.npz": "ebda3ebc74a63dddb37da8280fff0e9a018a3ae381ede78581e43254af62acee",
+    "case-02/deployment.md": "2b24616a80202d88809db1f251b02cd344e20a1a1b1a53a59af8e40ca2adb9aa",
+    "case-02/detector.py": "9ec8af8327740088b0d2cec5a272fec543bf599d5a515bae6987d1ce06286655",
+    "case-02/loader.py": "1a48cb784e61f45baa22b56ec184f5d5a965ec152fa8eb3ca6096dd27110a9d9",
+    "case-02/preliminary.json": "802ced799ac65353acf7ed1b4d18ebae0873b2794fbadc3efb4873c55d0b0576",
+    "case-02/request.md": "b8a4c82da550d464addbe50a360d42a616e75bd3ef9b10e05ba7a19e6be2bddd",
+    "case-02/run.py": "76fff17b886f50c532e3fa331386400d0dd53fe4f941c684adff751b40a07be7"
+  },
+  "seed_sha256": "f1dd559cf24ef339a4b097e83b3715e4df0b89ffa3f349789861da37f16135de",
+  "selection_note": "Seed parameters were provided in advance. Additional controls are diagnostic, not a search for the best-scoring setting.",
+  "versions": {
+    "numpy": "2.3.5",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.18.1"
+  }
+}

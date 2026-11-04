@@ -1,0 +1,135 @@
+{
+  "equal_batch_sizes": {
+    "128": {
+      "leaky": {
+        "initial": {
+          "deployment_matched_mixed": {
+            "baseline_auc": 0.8219888888888889,
+            "candidate_auc": 0.8169666666666666,
+            "delta_auc": -0.005022222222222261
+          },
+          "label_separated": {
+            "baseline_auc": 0.8219888888888889,
+            "candidate_auc": 0.9586777777777777,
+            "delta_auc": 0.13668888888888886
+          }
+        },
+        "reserve": {
+          "deployment_matched_mixed": {
+            "baseline_auc": 0.8354221413651371,
+            "candidate_auc": 0.832839206702154,
+            "delta_auc": -0.002582934662983205
+          },
+          "label_separated": {
+            "baseline_auc": 0.8354221413651371,
+            "candidate_auc": 0.9693416885654605,
+            "delta_auc": 0.1339195472003234
+          }
+        }
+      },
+      "legitimate": {
+        "initial": {
+          "deployment_matched_sessions": {
+            "baseline_auc": 0.8795666666666667,
+            "candidate_auc": 0.9584444444444444,
+            "delta_auc": 0.07887777777777771
+          },
+          "mixed_across_sessions": {
+            "baseline_auc": 0.8795666666666667,
+            "candidate_auc": 0.8264888888888889,
+            "delta_auc": -0.05307777777777778
+          }
+        },
+        "reserve": {
+          "deployment_matched_sessions": {
+            "baseline_auc": 0.8915953552096669,
+            "candidate_auc": 0.9688924825371157,
+            "delta_auc": 0.07729712732744876
+          },
+          "mixed_across_sessions": {
+            "baseline_auc": 0.8915953552096669,
+            "candidate_auc": 0.8908541652628978,
+            "delta_auc": -0.000741189946769083
+          }
+        }
+      }
+    },
+    "32": {
+      "leaky": {
+        "initial": {
+          "deployment_matched_mixed": {
+            "baseline_auc": 0.8219888888888889,
+            "candidate_auc": 0.6831555555555555,
+            "delta_auc": -0.13883333333333336
+          },
+          "label_separated": {
+            "baseline_auc": 0.8219888888888889,
+            "candidate_auc": 0.9588222222222222,
+            "delta_auc": 0.13683333333333336
+          }
+        },
+        "reserve": {
+          "deployment_matched_mixed": {
+            "baseline_auc": 0.8354221413651371,
+            "candidate_auc": 0.775958493362981,
+            "delta_auc": -0.0594636480021562
+          },
+          "label_separated": {
+            "baseline_auc": 0.8354221413651371,
+            "candidate_auc": 0.9693416885654605,
+            "delta_auc": 0.1339195472003234
+          }
+        }
+      },
+      "legitimate": {
+        "initial": {
+          "deployment_matched_sessions": {
+            "baseline_auc": 0.8379333333333333,
+            "candidate_auc": 0.9584222222222222,
+            "delta_auc": 0.12048888888888887
+          },
+          "mixed_across_sessions": {
+            "baseline_auc": 0.8379333333333333,
+            "candidate_auc": 0.8222444444444444,
+            "delta_auc": -0.015688888888888863
+          }
+        },
+        "reserve": {
+          "deployment_matched_sessions": {
+            "baseline_auc": 0.8871819059811783,
+            "candidate_auc": 0.9687914111807381,
+            "delta_auc": 0.08160950519955978
+          },
+          "mixed_across_sessions": {
+            "baseline_auc": 0.8871819059811783,
+            "candidate_auc": 0.9013655863261685,
+            "delta_auc": 0.01418368034499018
+          }
+        }
+      }
+    }
+  },
+  "fixed_evidence_contract_counterfactual": {
+    "complete_sessions_available_before_prediction": "supports bounded extension",
+    "individual_immediate_predictions_no_session_context": "does not establish deployable gain; defer extension and test a compatible method",
+    "interpretation": "A decision counterfactual, not a second measured data-generating experiment. Both performance measurements are identical.",
+    "only_changed_fact": "whether the complete unlabeled session is available before prediction",
+    "results": {
+      "baseline_auc": 0.8871819059811783,
+      "candidate_auc": 0.9687914111807381,
+      "delta_auc": 0.08160950519955978
+    }
+  },
+  "label_intervention": {
+    "case-01": {
+      "changed_evaluation_labels_only": true,
+      "images_reference_and_scoring_parameters_fixed": true,
+      "max_absolute_score_change": 2.5225971369604183
+    },
+    "case-02": {
+      "changed_evaluation_labels_only": true,
+      "images_reference_and_scoring_parameters_fixed": true,
+      "max_absolute_score_change": 0.0
+    }
+  }
+}
