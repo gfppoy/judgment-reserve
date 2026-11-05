@@ -357,7 +357,11 @@ def run(args):
         from . import sandbox
     if command == "setup":
         engine = sandbox.runtime()
+        print("Building the Docker/Podman sandbox for practice and evaluation.", flush=True)
         sandbox.ensure_image(engine, force=True)
+        print("Sandbox ready. The launcher starts a container for each agent session.")
+        print("Practice assistants receive case evidence; evaluators receive diagnoses after both submissions.")
+        print("Sign in with ./reserve login codex or ./reserve login claude, then use ./reserve start.")
         return
     if command == "login":
         home = ROOT / ".reserve/auth" / args.agent
@@ -420,7 +424,12 @@ def run(args):
             logfile = path / "logs" / args.case / f"{len(events):02d}-{command}.log"
             try:
                 cmd = sandbox.agent_command(provider, sandbox.ASSISTANT_PROMPT) if is_assistant else ["bash"]
-                if not is_assistant:
+                if is_assistant:
+                    print(f"Launching {provider} as your practice assistant inside the case sandbox.")
+                    print("Visible: this case's working evidence, experiments, and INITIAL.md.")
+                    print("The reference diagnoses, other case, and evaluator workspace are not mounted.")
+                    sys.stdout.flush()
+                else:
                     print("Offline case shell: you are in /workspace, with Python and NumPy installed.")
                     print("Run python run.py or your own scripts. No AI assistant is running.")
                     print("Type exit to return to your repository terminal and continue with ./reserve commands.")
@@ -438,7 +447,9 @@ def run(args):
         destination = evaluation(path, args.draft_guide)
         print("Evaluation workspace:", destination)
         if command == "evaluate":
-            print("The evaluator receives both submissions and the reference guide.")
+            print(f"Launching {args.agent} as the system evaluator in a separate sandbox and agent context.")
+            print("It receives both submissions, original evidence, reference diagnoses, and the assessment guide.")
+            print("The practice assistant's agent state is not reused.")
             print("Its opening task is supplied automatically: read EVALUATE.md and write feedback.md.")
             print("After the feedback is saved, exit the agent and run ./reserve next to read it.")
             sys.stdout.flush()

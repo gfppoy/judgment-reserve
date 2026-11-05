@@ -5,8 +5,8 @@ import shutil
 from pathlib import Path
 import pytest
 
-from judgment_reserve import sandbox
-from judgment_reserve.util import ROOT
+from judgment_reserve import sandbox, session
+from judgment_reserve.util import ROOT, sha256
 
 
 def test_proxy_allowlist_is_exact_and_rejects_other_ports():
@@ -38,7 +38,7 @@ def test_credentials_do_not_copy_previous_conversations(tmp_path):
 @pytest.mark.container
 @pytest.mark.skipif(os.environ.get("RESERVE_TEST_CONTAINERS") != "1", reason="Set RESERVE_TEST_CONTAINERS=1 for live isolation probes")
 @pytest.mark.parametrize("provider", ["codex", "claude"])
-def test_actual_container_isolation_and_native_cli(tmp_path, provider):
+def test_actual_container_isolation_and_native_cli(tmp_path, repo, provider):
     work = tmp_path / "evidence"
     work.mkdir()
     case = "case-01" if provider == "codex" else "case-02"
@@ -67,7 +67,10 @@ except OSError: out['direct_blocked']=True
 pathlib.Path('result.txt').write_text('experiment saved')
 print(json.dumps(out))
 '''
-    run = sandbox.run(work, tmp_path / "fresh-home", provider, ["python", "-c", code],
+    assistant_home = tmp_path / "assistant-home"
+    assistant_home.mkdir()
+    (assistant_home / "assistant-only.txt").write_text("Test marker for separate agent state")
+    run = sandbox.run(work, assistant_home, provider, ["python", "-c", code],
                       interactive=False, seconds=40)
     assert run.returncode == 0, run.stderr
     result = json.loads(run.stdout)
@@ -82,3 +85,44 @@ print(json.dumps(out))
     for metric, value in expected.items():
         assert result["metrics"][metric] == pytest.approx(value, abs=1e-12)
     assert (work / "result.txt").read_text() == "experiment saved"
+
+    # The evaluator uses the same provider with a different bundle and agent home.
+    # Probe real container file access without sending test answers to a model.
+    attempt = session.create(repo)
+    answer = (
+        "Container test fixture: I record competing explanations, a distinguishing "
+        "test, and a provisional spending decision supported by the supplied evidence."
+    )
+    with pytest.raises(ValueError, match="Both final"):
+        session.export_evaluation(attempt, repo, allow_draft=True)
+    for case_id in session.CASE_IDS:
+        (attempt / "responses" / f"{case_id}-initial.md").write_text(answer)
+        session.commit_initial(attempt, case_id)
+        (attempt / "responses" / f"{case_id}-final.md").write_text(answer)
+        session.submit(attempt, case_id)
+    bundle = session.export_evaluation(attempt, repo, allow_draft=True)
+    code = f'''import hashlib, json, pathlib
+out = {{
+    'diagnoses': {{case: hashlib.sha256(pathlib.Path(case + '.md').read_bytes()).hexdigest()
+                  for case in ('case-01', 'case-02')}},
+    'answers': {{case: pathlib.Path('submissions', case, 'final.md').read_text()
+                for case in ('case-01', 'case-02')}},
+    'guide_visible': pathlib.Path('guide.md').is_file(),
+    'task_visible': pathlib.Path('EVALUATE.md').is_file(),
+    'assistant_state_visible': (pathlib.Path.home() / 'assistant-only.txt').exists(),
+    'host_assistant_state_visible': pathlib.Path({str(assistant_home)!r}).exists(),
+    'repository_visible': pathlib.Path({str(ROOT)!r}).exists()
+}}
+print(json.dumps(out))
+'''
+    run = sandbox.run(bundle, attempt / "evaluator-state" / provider, provider,
+                      ["python", "-c", code], interactive=False, seconds=40)
+    assert run.returncode == 0, run.stderr
+    result = json.loads(run.stdout)
+    assert result["diagnoses"] == {case_id: sha256(repo / "reference" / f"{case_id}.md")
+                                   for case_id in session.CASE_IDS}
+    assert result["answers"] == {case_id: answer for case_id in session.CASE_IDS}
+    assert result["guide_visible"] and result["task_visible"]
+    assert not result["assistant_state_visible"]
+    assert not result["host_assistant_state_visible"]
+    assert not result["repository_visible"]

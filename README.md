@@ -31,7 +31,16 @@ assistant → submit your decision.** Independent exploration can include readin
 running, editing, and testing the working code. After both cases, a separate
 evaluator compares your reasoning and evidence with the reference diagnoses.
 
-### 1. Set up once: choose Codex or Claude Code
+**Your chosen agent powers both roles.** Codex or Claude Code first acts as your
+research assistant, then as the system evaluator in a separate session. The
+launcher controls which files each role receives:
+
+| Role | Available files | When it runs |
+|------|-----------------|--------------|
+| Practice assistant | One case's evidence, working code, experiments, and your initial note; no reference diagnosis | `./reserve assist case-01`, after you commit the initial note |
+| System evaluator | Both submitted answers and workings, original evidence, reference diagnoses, and assessment guide | `./reserve evaluate --draft-guide`, after both final submissions |
+
+### 1. Build the sandbox and sign in once
 
 You need **Python 3.12+**, a running **Docker or Podman** engine, and an account
 for your chosen agent. Use Linux, macOS, or Windows through WSL2.
@@ -42,6 +51,12 @@ cd judgment-reserve
 ./reserve setup
 ```
 
+**`./reserve setup` builds the Docker or Podman sandbox**, including the Codex and
+Claude Code CLIs and Python/NumPy. The image contains no cases or diagnoses.
+Keep Docker or Podman running while you practice. The launcher starts and stops
+the appropriate container for each `login`, `shell`, `assist`, or `evaluate`
+command; you do not need to start a container manually.
+
 Run **one** login command and follow its instructions:
 
 | Your agent | Run this command |
@@ -49,10 +64,10 @@ Run **one** login command and follow its instructions:
 | Codex | `./reserve login codex` |
 | Claude Code | `./reserve login claude` |
 
-The launcher remembers your choice. **Every practice command below is identical
-for both agents.** `setup` installs the native CLIs and the Python/NumPy environment.
-When you later launch an assistant or evaluator, the launcher provides its
-workspace, role instructions, and opening task message.
+Login uses a separate container with an empty workspace. The launcher remembers
+your choice and uses your account for both assistant and evaluator sessions.
+**Every practice command below is identical for both agents.** Each agent launch
+receives the appropriate workspace, role instructions, and opening task message.
 Your provider's normal subscription limits or API charges apply. Codex device
 login may require enabling it in your account/workspace settings.
 
@@ -64,7 +79,10 @@ After successful login, you return to your terminal. Create a new attempt:
 
 Already have an attempt? Run `./reserve next` instead. It shows your selected
 agent, current stage, and exact next commands. `start` always creates another
-attempt. Keep running `./reserve` commands from the repository directory.
+attempt. It prepares your local files; no AI agent is running yet. Keep running
+`./reserve` commands from the repository directory, and use `assist` or `evaluate`
+to launch the agent. Opening Codex or Claude directly in this directory would
+give it access to the reference answers.
 
 ### 2. Explore the case yourself
 
@@ -172,9 +190,11 @@ becomes available after this step; launch it with the command below.
 ./reserve assist case-01
 ```
 
-This opens **Codex or Claude Code**, using the choice you made at login. Both
-receive your initial note as `INITIAL.md`, your current working files, and an
-opening task automatically. The reference diagnosis is withheld. You now type
+This launches **Codex or Claude Code inside the practice sandbox**, using the
+choice you made at login. Only this case's working folder and its dedicated agent
+state are mounted. The agent receives your initial note as `INITIAL.md`, your
+working files, and an opening task automatically. The repository's `reference/`,
+judge walkthrough, other case, and evaluator files are not mounted. You now type
 requests into the agent's chat.
 
 **Continue from your independent work.** Any code edits, `investigation.py`, and
@@ -227,10 +247,15 @@ After both submissions:
 ./reserve evaluate --draft-guide
 ```
 
-Your chosen agent opens in a **separate evaluator context**, with your initial
-notes, investigation records, final decisions, and the reference diagnoses.
-The launcher supplies the evaluation task automatically. Let it write
-`feedback.md`, then exit and run `./reserve next` for the command to read it.
+The launcher starts your chosen **Codex or Claude Code as the system evaluator
+in a separate container and agent context**. It receives a prepared bundle of
+your initial notes, investigation records, final decisions, original evidence,
+reference diagnoses, and assessment guide. The assistant's agent state is not
+reused. This command remains blocked until both final submissions are recorded.
+
+The launcher supplies the comparison task automatically; your agent reads the
+bundle and writes the evaluation. Let it save `feedback.md`, then exit and run
+`./reserve next` for the command to read it.
 
 Feedback addresses hypotheses, tests, interpretation, uncertainty, and spending
 rationale, citing your saved work. Defensible alternative decisions receive
@@ -276,12 +301,15 @@ evaluator bundle without launching an agent. Session commands accept
 
 ## How the roles stay separate
 
-**Start agents through `reserve`, not in the repository root, which contains the
-answers.** The practice assistant receives only one case's evidence, your initial
-reasoning, and its working files. Its container has no reference files, repository
-history, normal host home, or container-engine socket. The evaluator receives a
-separate bundle and fresh agent state after submission. Only dedicated login files
-are shared between roles; conversations and project configuration are not.
+The `sandbox/` directory supplies the container image, agent configuration, and
+network restrictions used by the launcher. Docker or Podman enforces file access:
+the assistant container receives the practice workspace; the evaluator container
+receives the evaluation bundle. Role prompts describe the task within that boundary.
+
+Neither container receives the full repository, Git history, normal host home,
+or container-engine socket. Only dedicated login files are reused between the
+separate agent homes. The evaluator receives saved investigation work and terminal
+logs as assessment evidence, while starting with its own native agent state.
 
 An internal network and provider-only HTTPS proxy block ordinary retrieval of the
 public answers; native web tools are disabled. Failed isolation setup stops the
