@@ -6,9 +6,12 @@ import os
 import json
 from pathlib import Path
 import pty
+import signal
 import shutil
 import subprocess
+import termios
 import threading
+import tty
 import uuid
 
 from .util import ROOT, digest, manifest, sha256
@@ -156,6 +159,59 @@ def launch_command(workspace: Path, home: Path, provider: str, command: list[str
                            stderr=subprocess.DEVNULL)
 
 
+def _terminal_size():
+    for fd in (0, 1, 2):
+        try:
+            columns, rows = os.get_terminal_size(fd)
+            if rows > 0 and columns > 0:
+                return rows, columns
+        except OSError:
+            pass
+    return 24, 80
+
+
+def _spawn_interactive(command, master_read):
+    """Relay a terminal with its real dimensions, including later window resizes."""
+    size = _terminal_size()
+    pid, master_fd = pty.fork()
+    if pid == 0:
+        try:
+            # Set the size before the runtime can inspect it or start the agent.
+            termios.tcsetwinsize(0, size)
+            os.execvp(command[0], command)
+        except (OSError, termios.error) as error:
+            os.write(2, f"Could not start interactive command: {error}\n".encode())
+            os._exit(127)
+
+    def resize(*_):
+        try:
+            termios.tcsetwinsize(master_fd, _terminal_size())
+        except (OSError, termios.error):
+            pass  # The child may have just closed its terminal.
+
+    previous_handler = signal.getsignal(signal.SIGWINCH)
+    mode = None
+    try:
+        signal.signal(signal.SIGWINCH, resize)
+        resize()
+        try:
+            mode = termios.tcgetattr(0)
+            tty.setraw(0)
+        except termios.error:
+            mode = None
+        # Use the stdlib relay's buffering, partial-write, and EOF handling.
+        pty._copy(master_fd, master_read=master_read)
+    finally:
+        signal.signal(signal.SIGWINCH, previous_handler)
+        if mode is not None:
+            try:
+                termios.tcsetattr(0, termios.TCSAFLUSH, mode)
+            except termios.error:
+                pass
+        os.close(master_fd)
+    return os.waitpid(pid, 0)[1]
+
+
 def run(workspace: Path, home: Path, provider: str, command: list[str], *,
         log: Path | None = None, interactive: bool = True, root: Path = ROOT,
         network: bool = True, seconds: int = 1800):
@@ -176,7 +232,7 @@ def run(workspace: Path, home: Path, provider: str, command: list[str], *,
                     stream.write(data)
                     stream.flush()
                     return data
-                status = pty.spawn(base + ["-it", IMAGE] + cmd, master_read=read)
+                status = _spawn_interactive(base + ["-it", IMAGE] + cmd, master_read=read)
                 return os.waitstatus_to_exitcode(status)
         finally:
             timer.cancel()
