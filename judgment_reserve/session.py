@@ -17,7 +17,7 @@ ideas to investigate, and you can state what you do not yet understand.
 You may read, run, edit, and test the working code independently before recording
 this note. Include any changes, tests, and saved results from that exploration;
 distinguish what you have already observed from tests you still plan to run.
-Replace each [write here], save, and close the editor. The launcher will show how
+Complete each answer field, save, and close the editor. The launcher will show how
 to record this note and open your chosen assistant.
 
 ## Competing explanations
@@ -36,7 +36,7 @@ For each possible outcome, what further work and spending would you justify?
 FINAL = """# Final decision
 
 Write this yourself after investigating. Short, specific answers are enough.
-Replace each [write here], save, and close the editor before submitting.
+Complete each answer field, save, and close the editor before submitting.
 
 ## Verdict and spending limit
 What action do you recommend, and how many compute-hours does it justify?
@@ -130,8 +130,17 @@ def reasoning(file: Path) -> str:
     if file.is_symlink() or not file.is_file() or file.stat().st_size > 65536:
         raise ValueError("Provide a regular Markdown file of at most 64 KB")
     text = file.read_text()
-    if "[write here]" in text or len(text.strip()) < 80:
-        raise ValueError("Complete the reasoning file before committing it (at least 80 characters; no template placeholders).")
+    # Answer slots occupy whole lines. Older templates also mention the marker in
+    # their instructions; leaving that explanatory sentence intact is valid.
+    unfilled = [str(number) for number, line in enumerate(text.splitlines(), 1)
+                if line.strip() == "[write here]"]
+    if unfilled:
+        raise ValueError(f"Complete the answer placeholders in {file} (lines {', '.join(unfilled)}). "
+                         "Replace those [write here] lines with your answers, save, and retry.")
+    length = len(text.strip())
+    if length < 80:
+        raise ValueError(f"The reasoning file {file} has {length} characters; at least 80 are required. "
+                         "Save your answers in this file and retry.")
     return text
 
 

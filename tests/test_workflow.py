@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 import pytest
 from judgment_reserve import ledger, session
 from judgment_reserve.util import read_json, write_json, review_version
@@ -32,6 +33,58 @@ def test_submission_and_diagnosis_gates(repo):
     with pytest.raises(ValueError, match="already"):
         session.commit_initial(path, "case-01")
     assert not (path / "evaluation").exists()
+
+
+@pytest.mark.parametrize("legacy_instructions", [False, True])
+def test_filled_template_fields_commit_without_deleting_instructions(repo, legacy_instructions):
+    path = session.create(repo)
+    answer = "My answer records the evidence I inspected and the further work I would choose."
+    for part in ("initial", "final"):
+        file = path / "responses" / f"case-01-{part}.md"
+        text = file.read_text()
+        if legacy_instructions:
+            text = text.replace("Complete each answer field", "Replace each [write here]")
+        # Fill only the answer slots, as a participant following the form would.
+        text = re.sub(r"(?m)^\[write here\]$", answer, text)
+        file.write_text(text)
+        assert session.reasoning(file) == text
+        if part == "initial":
+            session.commit_initial(path, "case-01")
+            saved = path / "committed/case-01/initial.md"
+        else:
+            session.submit(path, "case-01")
+            saved = path / "submitted/case-01/final.md"
+        assert saved.read_text() == text
+        assert file.read_text() == text
+
+
+@pytest.mark.parametrize("template", [session.INITIAL, session.FINAL], ids=["initial", "final"])
+def test_unfilled_answer_error_identifies_the_file_and_line(tmp_path, template):
+    file = tmp_path / "answer.md"
+    lines = template.replace("Complete each answer field", "Replace each [write here]").splitlines()
+    unfilled = None
+    for index, line in enumerate(lines):
+        if line == "[write here]":
+            if unfilled is None:
+                lines[index] = "  [write here]  "
+                unfilled = index + 1
+            else:
+                lines[index] = "My answer to this field is saved here."
+    file.write_text("\n".join(lines))
+    with pytest.raises(ValueError) as error:
+        session.reasoning(file)
+    assert str(file) in str(error.value)
+    assert f"(lines {unfilled})" in str(error.value)
+
+
+def test_short_reasoning_error_is_distinct_from_unfilled_fields(tmp_path):
+    file = tmp_path / "answer.md"
+    file.write_text("x" * 79 + "\n")
+    with pytest.raises(ValueError) as error:
+        session.reasoning(file)
+    assert str(file) in str(error.value)
+    assert "79 characters; at least 80" in str(error.value)
+    assert "placeholder" not in str(error.value)
 
 
 def test_complete_pair_exports_guide_only_after_explicit_draft_opt_in(repo):
