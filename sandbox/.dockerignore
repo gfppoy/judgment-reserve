@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!entrypoint.py
+!egress_proxy.py
+!claude-settings.json

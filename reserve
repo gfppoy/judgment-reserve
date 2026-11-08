@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+"""Run from a checkout; ordinary session commands require only Python's stdlib."""
+from judgment_reserve.cli import main
+
+main()
